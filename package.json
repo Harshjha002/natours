@@ -1,0 +1,27 @@
+{
+  "name": "natours",
+  "version": "1.0.0",
+  "main": "app.js",
+  "scripts": {
+    "start": "nodemone app.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Harshjha002/natours.git"
+  },
+  "keywords": [
+    "express",
+    "mongodb",
+    "pug"
+  ],
+  "author": "harsh",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Harshjha002/natours/issues"
+  },
+  "homepage": "https://github.com/Harshjha002/natours#readme",
+  "description": "",
+  "dependencies": {
+    "express": "^5.1.0"
+  }
+}
