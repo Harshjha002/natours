@@ -1,10 +1,12 @@
 import express from 'express';
 import fs from 'fs';
+import morgan from 'morgan';
 import { dirname } from 'path';
 import { fileURLToPath } from 'url';
 
 const app = express();
 app.use(express.json());
+app.use(morgan('dev'));
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -13,8 +15,20 @@ const tours = JSON.parse(
   fs.readFileSync(`${__dirname}/dev-data/data/tours-simple.json`, 'utf-8')
 );
 
+app.use((req, res, next) => {
+  console.log('Middleware ✅');
+  next();
+});
+
+app.use((req, res, next) => {
+  req.requestTime = new Date().toISOString();
+  next();
+});
+
 const getAllTours = (req, res) => {
+  console.log(req.requestTime);
   res.status(200).json({
+    time: req.requestTime,
     status: 'success',
     result: tours.length,
     data: {
