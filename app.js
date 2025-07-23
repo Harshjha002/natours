@@ -24,6 +24,25 @@ app.get('/api/v1/tours', (req, res) => {
   });
 });
 
+//get a tourById
+app.get('/api/v1/tours/:id', (req, res) => {
+  const id = req.params.id * 1;
+  const tour = tours.find((el) => el.id === id);
+
+  if (!tour) {
+    return res.status(404).json({
+      status: 'fail',
+      message: 'No tour found with that ID',
+    });
+  }
+  res.status(200).json({
+    status: 'success',
+    data: {
+      tour,
+    },
+  });
+});
+
 //post a tour
 app.post('/api/v1/tours', (req, res) => {
   // console.log(req.body);
@@ -43,6 +62,41 @@ app.post('/api/v1/tours', (req, res) => {
       });
     }
   );
+});
+
+//patch a tour
+app.patch('/api/v1/tours/:id', (req, res) => {
+  const id = req.params.id * 1;
+  const tour = tours.find((el) => el.id === id);
+
+  if (!tour) {
+    return res.status(404).json({
+      status: 'fail',
+      message: 'No tour found with that ID',
+    });
+  }
+  res.status(200).json({
+    status: 'success',
+    data: {
+      tour: '<Updated tours >',
+    },
+  });
+});
+
+app.delete('/api/v1/tours/:id', (req, res) => {
+  const id = req.params.id * 1;
+  const tour = tours.find((el) => el.id === id);
+
+  if (!tour) {
+    return res.status(404).json({
+      status: 'fail',
+      message: 'No tour found with that ID',
+    });
+  }
+  res.status(204).json({
+    status: 'success',
+    data: null,
+  });
 });
 
 const port = 3000;
