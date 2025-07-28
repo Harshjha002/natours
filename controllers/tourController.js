@@ -1,6 +1,18 @@
 import Tour from '../models/tourModel.js';
 import APIFeatures from '../utils/apiFeatures.js';
 
+export const aliasTopTours = (req, res, next) => {
+  // eslint-disable-next-line node/no-unsupported-features/node-builtins
+  const query = new URLSearchParams(req.query);
+  query.set('limit', '5');
+  query.set('sort', 'price,-ratingsAverage');
+  query.set('fields', 'name,price,ratingsAverage,summary,difficulty');
+
+  req.url = `${req.path}?${query.toString()}`;
+
+  next();
+};
+
 export const getTourById = async (req, res) => {
   try {
     const tour = await Tour.findById(req.params.id);
