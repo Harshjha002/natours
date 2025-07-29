@@ -56,6 +56,10 @@ const toursSchema = new mongoose.Schema(
       select: false,
     },
     startDates: [Date],
+    secretTour: {
+      type: Boolean,
+      default: false,
+    },
   },
   {
     toJSON: { virtuals: true },
@@ -65,6 +69,24 @@ const toursSchema = new mongoose.Schema(
 
 toursSchema.virtual('durationWeeks').get(function () {
   return this.duration / 7;
+});
+
+toursSchema.pre(/^find/, function (next) {
+  this.find({ secretTour: { $ne: true } });
+  this.start = Date.now();
+  next();
+});
+
+// toursSchema.post(/^find/, function (docs, next) {
+//   console.log(`Query took ${Date.now() - this.start} milliseconds!`);
+//   console.log(docs);
+//   next();
+// });
+
+toursSchema.pre('aggregate', function (next) {
+  this.pipeline().unshift({ $match: { secretTour: { $ne: true } } });
+  console.log(this.pipeline());
+  next();
 });
 
 const Tour = mongoose.model('Tour', toursSchema);
