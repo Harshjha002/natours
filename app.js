@@ -4,6 +4,8 @@ import { dirname } from 'path';
 import { fileURLToPath } from 'url';
 import tourRouter from './routes/toursRoutes.js';
 import userRouter from './routes/userRoutes.js';
+import AppError from './utils/appError.js';
+import globalErrorHandler from './controllers/errorController.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -24,10 +26,11 @@ app.use(express.static(`${__dirname}/public`));
 
 app.use('/api/v1/tours', tourRouter);
 app.use('/api/v1/users', userRouter);
+
 app.all('/{*any}', (req, res, next) => {
-  res.status(404).json({
-    status: 'fail',
-    message: `can't find ${req.originalUrl} on the server`,
-  });
+  next(new AppError(`can't find ${req.originalUrl} on the server`, 404));
 });
+
+app.use(globalErrorHandler);
+
 export default app;
