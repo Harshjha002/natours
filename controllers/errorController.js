@@ -19,13 +19,13 @@ const sendErrorProd = (err, res) => {
     console.error('ERROR 💥', err);
     res.status(500).json({
       status: 'error',
-      message: 'something went wrong',
+      message: 'Something went very wrong!',
     });
   }
 };
 
 const handleCastErrorDB = (err) => {
-  const message = `Invalid ${err.path}:${err.value}`;
+  const message = `Invalid ${err.path}: ${err.value}`;
   return new AppError(message, 400);
 };
 
@@ -41,6 +41,9 @@ const handleValidationErrorDB = (err) => {
   const message = `Invalid input data: ${errors.join('. ')}`;
   return new AppError(message, 400);
 };
+
+const handleJWTError = () =>
+  new AppError('Invalid token. Please log in again!', 401);
 
 const globalErrorHandler = (err, req, res, next) => {
   err.statusCode = err.statusCode || 500;
@@ -62,6 +65,10 @@ const globalErrorHandler = (err, req, res, next) => {
     if (error.name === 'ValidationError') {
       error = handleValidationErrorDB(error);
     }
+    if (error.name === 'JsonWebTokenError') {
+      error = handleJWTError();
+    }
+
     sendErrorProd(error, res);
   }
 };

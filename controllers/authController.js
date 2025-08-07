@@ -2,6 +2,8 @@ import jwt from 'jsonwebtoken';
 import User from '../models/userModel.js';
 import catchAsync from '../utils/catchAsync.js';
 import AppError from '../utils/appError.js';
+// eslint-disable-next-line import/order
+import { promisify } from 'util';
 
 const signToken = (id) =>
   jwt.sign({ id }, process.env.JWT_SECRET, {
@@ -49,4 +51,30 @@ export const login = catchAsync(async (req, res, next) => {
     status: 'success',
     token,
   });
+});
+
+export const protectedRoutes = catchAsync(async (req, res, next) => {
+  // 1) Get token from headers
+  let token;
+  if (
+    req.headers.authorization &&
+    req.headers.authorization.startsWith('Bearer')
+  ) {
+    token = req.headers.authorization.split(' ')[1];
+  }
+
+  // 2) Check if token exists
+  if (!token) {
+    return next(new AppError('You are not logged in', 401));
+  }
+
+  // 3) Verify token
+  const decoded = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
+  console.log(decoded);
+
+  //check if user still exist
+
+  //check if user changed password after the token issue
+
+  next();
 });
