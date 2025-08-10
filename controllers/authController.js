@@ -18,6 +18,7 @@ export const signUp = catchAsync(async (req, res, next) => {
     password: req.body.password,
     passwordConfirm: req.body.passwordConfirm,
     passwordChangedAt: req.body.passwordChangedAt,
+    role: req.body.role,
   });
 
   const token = signToken(newUser._id);
@@ -90,3 +91,15 @@ export const protectedRoutes = catchAsync(async (req, res, next) => {
   req.user = freshUser;
   next();
 });
+
+export const restrictTO =
+  (...roles) =>
+  (req, res, next) => {
+    if (!roles.includes(req.user.role)) {
+      return next(
+        new AppError('You are not authorized to delete this resource', 403)
+      );
+    }
+
+    next();
+  };
