@@ -100,6 +100,18 @@ export const restrictTO =
         new AppError('You are not authorized to delete this resource', 403)
       );
     }
-
     next();
   };
+
+export const forgotPassword = catchAsync(async (req, res, next) => {
+  //get user by emal
+  const user = await User.findOne({ email: req.body.email });
+  if (!user) {
+    return next(new AppError('invalid emal address', 404));
+  }
+  //genarate random token
+  const resetToken = user.createPasswordReset();
+  await user.save({ validateBeforeSave: false });
+  //send it back as emal
+});
+export const resetPassword = (req, res, next) => {};
