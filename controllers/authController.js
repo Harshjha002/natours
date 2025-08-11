@@ -5,6 +5,8 @@ import AppError from '../utils/appError.js';
 // eslint-disable-next-line import/order
 import { promisify } from 'util';
 
+import sendEmail from '../utils/email.js';
+
 const signToken = (id) =>
   jwt.sign({ id }, process.env.JWT_SECRET, {
     expiresIn: process.env.JWT_EXPIRES_IN,
@@ -113,5 +115,31 @@ export const forgotPassword = catchAsync(async (req, res, next) => {
   const resetToken = user.createPasswordReset();
   await user.save({ validateBeforeSave: false });
   //send it back as emal
+  const resetURL = `${req.protocol}://${req.get('host')}/api/v1/users/reset-password/${resetToken}`;
+
+  const message = `Frogot your password? send a patch request with a new passsword and password confirm to ${resetURL}.\nIf You dident frogone please ingr this`;
+  console.log('Generated reset token:', resetToken);
+  console.log('Reset URL:', resetURL);
+
+  try {
+    await sendEmail({
+      email: user.email,
+      subject: 'Your password reset token (valid for 10 minutes)',
+      message,
+    });
+    console.log('Email sent successfully');
+
+    res.status(200).json({
+      status: 'success',
+      message: 'token send to ur eail',
+    });
+  } catch (err) {
+    user.passwordResetToken = undefined;
+    user.passwordResetExpires = undefined;
+    await user.save({ validateBeforeSave: false });
+
+    console.error('Error sending email:', err);
+    return next(new AppError('there was a error', 500));
+  }
 });
 export const resetPassword = (req, res, next) => {};
