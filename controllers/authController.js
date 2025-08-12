@@ -4,6 +4,7 @@ import catchAsync from '../utils/catchAsync.js';
 import AppError from '../utils/appError.js';
 // eslint-disable-next-line import/order
 import { promisify } from 'util';
+import crypto from 'crypto';
 
 import sendEmail from '../utils/email.js';
 
@@ -142,4 +143,34 @@ export const forgotPassword = catchAsync(async (req, res, next) => {
     return next(new AppError('there was a error', 500));
   }
 });
-export const resetPassword = (req, res, next) => {};
+
+export const resetPassword = catchAsync(async (req, res, next) => {
+  //get user based on token
+  const hashedToken = crypto
+    .createHash('sha256')
+    .update(req.params.token)
+    .digest('hex');
+
+  const user = await User.findOne({
+    passwordResetToken: hashedToken,
+    passwordResetExpires: { $gt: Date.now() },
+  });
+  //set new password is token nor expired
+  if (!user) {
+    return next(new AppError('Token is invaild os expired', 400));
+  }
+
+  user.password = req.body.password;
+  user.passwordConfirm = req.body.passwordConfirm;
+  user.passwordResetToken = undefined;
+  user.passwordResetExpires = undefined;
+  await user.save();
+  //update chage password at propert for current user
+
+  //log user in
+  const token = signToken(user._id);
+  res.status(200).json({
+    status: 'success',
+    token,
+  });
+});
