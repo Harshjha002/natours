@@ -43,14 +43,14 @@ export const login = catchAsync(async (req, res, next) => {
   if (!email || !password) {
     return next(new AppError('Please provide email and password', 400));
   }
-  //check if user and password are corect
+  // Check if user and password are correct
   const user = await User.findOne({ email }).select('+password');
 
   if (!user || !(await user.correctPassword(password, user.password))) {
-    return next(new AppError('Incorrect Email or passwors', 401));
+    return next(new AppError('Incorrect email or password', 401));
   }
 
-  //if everything ok sent the token to client
+  // If everything is OK, send the token to the client
   createAndSendToken(user, 200, res);
 });
 
@@ -72,11 +72,11 @@ export const protectedRoutes = catchAsync(async (req, res, next) => {
   // 3) Verify token
   const decoded = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
 
-  //check if user still exist
+  // 4) Check if user still exists
   const freshUser = await User.findById(decoded.id);
-  if (!freshUser) next(new AppError('The User does not exist', 401));
+  if (!freshUser) return next(new AppError('The user does not exist', 401));
 
-  //check if user changed password after the token issue
+  // 5) Check if user changed password after the token was issued
   if (freshUser.changedPasswordAfter(decoded.iat)) {
     return next(
       new AppError(
@@ -86,7 +86,7 @@ export const protectedRoutes = catchAsync(async (req, res, next) => {
     );
   }
 
-  //Grant access to protected route
+  // Grant access to protected route
   req.user = freshUser;
   next();
 });
@@ -96,25 +96,25 @@ export const restrictTO =
   (req, res, next) => {
     if (!roles.includes(req.user.role)) {
       return next(
-        new AppError('You are not authorized to delete this resource', 403)
+        new AppError('You are not authorized to perform this action', 403)
       );
     }
     next();
   };
 
 export const forgotPassword = catchAsync(async (req, res, next) => {
-  //get user by emal
+  // 1) Get user by email
   const user = await User.findOne({ email: req.body.email });
   if (!user) {
-    return next(new AppError('invalid emal address', 404));
+    return next(new AppError('Invalid email address', 404));
   }
-  //genarate random token
+  // 2) Generate random token
   const resetToken = user.createPasswordReset();
   await user.save({ validateBeforeSave: false });
-  //send it back as emal
+  // 3) Send it back as email
   const resetURL = `${req.protocol}://${req.get('host')}/api/v1/users/reset-password/${resetToken}`;
 
-  const message = `Frogot your password? send a patch request with a new passsword and password confirm to ${resetURL}.\nIf You dident frogone please ingr this`;
+  const message = `Forgot your password? Send a PATCH request with your new password and passwordConfirm to: ${resetURL}.\nIf you didn't request a password reset, please ignore this email.`;
   console.log('Generated reset token:', resetToken);
   console.log('Reset URL:', resetURL);
 
@@ -128,7 +128,7 @@ export const forgotPassword = catchAsync(async (req, res, next) => {
 
     res.status(200).json({
       status: 'success',
-      message: 'token send to ur eail',
+      message: 'Token sent to your email',
     });
   } catch (err) {
     user.passwordResetToken = undefined;
@@ -136,12 +136,12 @@ export const forgotPassword = catchAsync(async (req, res, next) => {
     await user.save({ validateBeforeSave: false });
 
     console.error('Error sending email:', err);
-    return next(new AppError('there was a error', 500));
+    return next(new AppError('There was an error sending the email', 500));
   }
 });
 
 export const resetPassword = catchAsync(async (req, res, next) => {
-  //get user based on token
+  // 1) Get user based on token
   const hashedToken = crypto
     .createHash('sha256')
     .update(req.params.token)
@@ -151,9 +151,10 @@ export const resetPassword = catchAsync(async (req, res, next) => {
     passwordResetToken: hashedToken,
     passwordResetExpires: { $gt: Date.now() },
   });
-  //set new password is token nor expired
+
+  // 2) If token has not expired and there is a user, set the new password
   if (!user) {
-    return next(new AppError('Token is invaild os expired', 400));
+    return next(new AppError('Token is invalid or has expired', 400));
   }
 
   user.password = req.body.password;
@@ -161,23 +162,25 @@ export const resetPassword = catchAsync(async (req, res, next) => {
   user.passwordResetToken = undefined;
   user.passwordResetExpires = undefined;
   await user.save();
-  //update chage password at propert for current user
 
-  //log user in
+  // 3) Log the user in
   createAndSendToken(user, 200, res);
 });
 
 export const updatePassword = catchAsync(async (req, res, next) => {
-  // Get the user from the collection
+  // 1) Get the user from the collection
   const user = await User.findById(req.user.id).select('password');
-  // check posted password is correct
+
+  // 2) Check if posted current password is correct
   if (!(await user.correctPassword(req.body.passwordCurrent, user.password))) {
-    return next(new AppError('Yout correent password is wrong', 401));
+    return next(new AppError('Your current password is wrong', 401));
   }
-  //if correct thn update the password
+
+  // 3) If correct, update the password
   user.password = req.body.password;
   user.passwordConfirm = req.body.passwordConfirm;
   await user.save();
-  //log the user in with new password
+
+  // 4) Log the user in with the new password
   createAndSendToken(user, 200, res);
 });

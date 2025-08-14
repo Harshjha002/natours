@@ -1,4 +1,5 @@
 import User from '../models/userModel.js';
+import AppError from '../utils/appError.js';
 import catchAsync from '../utils/catchAsync.js';
 
 export const getAllUsers = catchAsync(async (req, res) => {
@@ -12,6 +13,22 @@ export const getAllUsers = catchAsync(async (req, res) => {
     },
   });
 });
+
+export const updateMe = (req, res, next) => {
+  if (req.body.password || req.body.passwordConfirm) {
+    return next(
+      new AppError(
+        'This route is not for password updates please use /update-my-password too update passsword',
+        400
+      )
+    );
+  }
+
+  res.status(200).json({
+    status: 'success',
+  });
+};
+
 export const createUser = (req, res) => {
   res
     .status(500)
