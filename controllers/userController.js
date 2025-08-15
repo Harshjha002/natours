@@ -14,18 +14,34 @@ export const getAllUsers = catchAsync(async (req, res) => {
   });
 });
 
-export const updateMe = (req, res, next) => {
+const filterObj = (obj, ...allowedFields) => {
+  const newObj = {};
+  Object.keys(obj).forEach((el) => {
+    if (allowedFields.includes(el)) newObj[el] = obj[el];
+  });
+  return newObj;
+};
+export const updateMe = async (req, res, next) => {
   if (req.body.password || req.body.passwordConfirm) {
     return next(
       new AppError(
-        'This route is not for password updates please use /update-my-password too update passsword',
+        'This route is not for password updates. Please use /update-my-password to update your password.',
         400
       )
     );
   }
 
+  const filterBody = filterObj(req.body, 'name', 'email');
+  const updatedUser = await User.findByIdAndUpdate(req.user.id, filterBody, {
+    new: true,
+    runValidators: true,
+  });
+
   res.status(200).json({
     status: 'success',
+    data: {
+      user: updatedUser,
+    },
   });
 };
 
